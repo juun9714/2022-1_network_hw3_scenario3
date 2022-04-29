@@ -570,7 +570,7 @@ int dv_get_sock_for_destination(int sock, in_addr_t src, in_addr_t dst)
   int i=0;
 
   for(i=0;i<g_fw_table_size;i++){
-    if((dst & g_fw_table[i].mask)==g_fw_table[i].next){
+    if((dst & g_fw_table[i].mask)==g_fw_table[i].dest){
       sock=g_fw_table[i].itf;
       return sock;
     }
