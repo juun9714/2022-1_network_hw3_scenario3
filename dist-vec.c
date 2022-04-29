@@ -120,7 +120,7 @@ char* dv_get_itf_name(int sock)
   return ptr;
 }
 
-int dv_broadcast_dv_message()
+int dv_broadcast_dv_message(in_addr_t* myipaddrs)
 { //broadcast the routing information with DV exchange message
 
   /** FILL IN YOUR CODE */
@@ -129,6 +129,9 @@ int dv_broadcast_dv_message()
      2. broadcast the DV message to every active network interface
   *****************************************************************/
   // char* dat=(char*)malloc(18);
+
+
+
   int sock;
   char* not="nothing";
   int ret_val;
@@ -153,14 +156,20 @@ int dv_broadcast_dv_message()
     strcat(net_addr, hop);
     strcat(net_addr, "\n");
   }
-
+  strcat(net_addr,"x");
   printf("DAT :\n%s\n",net_addr);
+
+  struct in_addr src_a;
+  char src_[16];
+  src_a.s_addr = myipaddrs[0];
+  strcpy(src_, inet_ntoa(src_a));
+  printf("myipaddrs : %s\n",src_);
 
 
   for(int i=0;i<g_rt_table_size;i++){
     sock=-1;
     sock=dv_get_sock_for_destination(sock, g_rt_table[i].next, g_rt_table[i].next);
-    ret_val=sendmessage(sock, brcaddr, brcaddr, len, type, net_addr);
+    ret_val=sendmessage(sock, myipaddrs[0], brcaddr, len, type, net_addr);
   }
 
 #ifdef _DEBUG
@@ -286,7 +295,7 @@ int dv_update_fw_table()
 int dv_update_routing_info(int sock, char* dat, int dat_len, in_addr_t src)
 { //update routing table and forwarding table
   printf("In dv_update_routing_info\n");
-  // printf("dat->hop is %d\n",(dv_entry*)dat->hop);
+  printf("IN UPDATE FUNCTION, dat is %s\n",dat);
   int ret_val;
   dv_entry* dv;
   int dv_entry_num;
@@ -300,6 +309,82 @@ int dv_update_routing_info(int sock, char* dat, int dat_len, in_addr_t src)
       2. set cmd to the command described in DV exchange message
 
   ************************************************************/
+
+  int i=0;
+  dv_entry_num=0;
+  printf("dat_len : %d\n",dat_len);
+  //if str finds 'x', string is end
+
+  /*
+    reference to convert string to ip address
+
+    // IPv4 demo of inet_ntop() and inet_pton()
+
+    struct sockaddr_in sa;
+    char str[INET_ADDRSTRLEN];
+
+    // store this IP address in sa:
+    inet_pton(AF_INET, "192.0.2.33", &(sa.sin_addr));
+
+    // now get it back and print it
+    inet_ntop(AF_INET, &(sa.sin_addr), str, INET_ADDRSTRLEN);
+
+    printf("%s\n", str); // prints "192.0.2.33"
+  */
+
+  while(dat[i]!='x'){
+    if(dat[i]=='\n')
+      dv_entry_num++;
+    i++;
+  }
+  printf("entry num = %d\n",dv_entry_num);
+  dv=(dv_entry*)malloc(sizeof(dv_entry)*dv_entry_num);
+  char temp[20];
+  i=0;
+  int entry_id=0;
+  while(dat[i]!='x'){
+    char tmp_addr[20]="\0";
+    char tmp_mask[6]="\0";
+    char tmp_hop[5]="\0";
+    int tmp_hop_len=0;
+    while(dat[i]!='/n' && dat[i]!='x'){
+      int j=0; 
+      while(dat[i]!='/'){
+        //addr
+        tmp_addr[j++]=dat[i++];
+      }
+      j=0;
+      i++;
+      while(dat[i]!='/'){
+        tmp_mask[j++]=dat[i++];
+      }
+      j=0;
+      i++;
+      tmp_hop_len=0;
+      while(dat[i]!='\n'){
+        tmp_hop[j++]=dat[i++];
+      }
+      i++;
+      
+      struct in_addr dvNet;
+      inet_aton(tmp_addr,&dvNet);
+      dv[entry_id].dest=dvNet.s_addr;
+      dv[entry_id].mask=atoi(tmp_mask);
+      dv[entry_id].hop=atoi(tmp_hop);
+
+      // printf("tmp_mask[%d] : %s\n",entry_id,tmp_mask);
+      // printf("tmp_hop[%d] : %s\n",entry_id,tmp_hop);
+      entry_id++;
+      //ONE ENTRY DONE
+    }
+  }
+
+  // for(i=0;i<dv_entry_num;i++){
+  //   printf("dv_mask[%d] %d\n",i,dv[i].mask);
+  //   printf("dv_hop[%d] %d\n",i,dv[i].hop);
+  // }
+
+  cmd=DV_ADVERTISE;
   
   if(cmd == DV_ADVERTISE)
   {

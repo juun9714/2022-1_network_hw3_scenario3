@@ -62,11 +62,7 @@ int processdata(int sock, char* dat, int len, int type, in_addr_t src_addr)
   }
   else if(type == DATA_DV)
   { /** FILL IN YOUR CODE in dv_update_routing_info() function */
-    printf("##IN processdata(), and it is DATA_DV type\n");
-    printf("size of dat is %d\n",sizeof(dat));
-    //printf("dat->hop is %d\n",(dv_entry*)dat->hop);
 		dv_update_routing_info(sock, dat, len, src_addr);
-   /** the memory should be freed */
     free(dat);
   }
   
@@ -133,7 +129,7 @@ void timeout()
   dv_update_tables_for_timeout(curtime, myconfigint);
 	
   /* broadcast its routing information through DV message */
-  ret_val = dv_broadcast_dv_message();
+  ret_val = dv_broadcast_dv_message(myipaddrs);
   if(ret_val != 1)
   {
     printf("timeout(): the router cannot broadcast its routing information to its neighbors\n");
