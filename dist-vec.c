@@ -128,35 +128,39 @@ int dv_broadcast_dv_message()
 
      2. broadcast the DV message to every active network interface
   *****************************************************************/
-  dv_entry* dv_entries;
-  dv_entries=(dv_entry*)malloc(sizeof(dv_entry)*g_rt_table_size);
-
-  for(int i=0;i<g_rt_table_size;i++){
-    dv_entries[i].dest=g_rt_table[i].dest;
-    dv_entries[i].mask=g_rt_table[i].mask;
-    dv_entries[i].hop=g_rt_table[i].hop;
-  }
+  // char* dat=(char*)malloc(18);
   int sock;
-  ushort len=sizeof(dv_entry)*g_rt_table_size;
-  u_char type=DATA_DV;
-  char* dat=(char*)&dv_entries;
-  // in_addr_t myaddr=g_rt_table[0].dest;
   char* not="nothing";
   int ret_val;
   in_addr_t brcaddr= 0xffffffff;
+  
+  u_char type=DATA_DV;
+  ushort len;
+  char net_addr[300]="";
+  for(int i=0;i<g_rt_table_size;i++){
+    printf("iter %d\n",i);
+    struct in_addr net;
+    len=sizeof(net_addr);
+    net.s_addr = g_rt_table[i].dest;
+    strcat(net_addr, inet_ntoa(net));
+    char mask[6];
+    sprintf(mask,"%d",g_rt_table[i].mask);
+    char hop[3];
+    sprintf(hop,"%d",g_rt_table[i].hop);
+    strcat(net_addr, "/");
+    strcat(net_addr, mask);
+    strcat(net_addr, "/");
+    strcat(net_addr, hop);
+    strcat(net_addr, "\n");
+  }
+
+  printf("DAT :\n%s\n",net_addr);
+
 
   for(int i=0;i<g_rt_table_size;i++){
     sock=-1;
-    //int dv_get_sock_for_destination(int sock, in_addr_t src, in_addr_t dst)
     sock=dv_get_sock_for_destination(sock, g_rt_table[i].next, g_rt_table[i].next);
-    printf("##iter %d --- IN_BROADCAST_SOCK %d\n",i, sock);
-    printf("sendmessage start\n");
-
-    ret_val=sendmessage(sock, brcaddr, brcaddr, len, type, dat);
-    if(ret_val!=1){
-      printf("sendmessage() fail\n");
-      return 0;
-    }
+    ret_val=sendmessage(sock, brcaddr, brcaddr, len, type, net_addr);
   }
 
 #ifdef _DEBUG
@@ -282,6 +286,7 @@ int dv_update_fw_table()
 int dv_update_routing_info(int sock, char* dat, int dat_len, in_addr_t src)
 { //update routing table and forwarding table
   printf("In dv_update_routing_info\n");
+  // printf("dat->hop is %d\n",(dv_entry*)dat->hop);
   int ret_val;
   dv_entry* dv;
   int dv_entry_num;
@@ -371,13 +376,13 @@ int dv_forward(IPPkt* ippkt)
 
       3. send the Ethernet frame to the appropriate hub
   **************************************************************************************************/
-  printf("1\n");
+  //printf("1\n");
   dumpippkt(ippkt);
-  printf("2\n");
+  //printf("2\n");
 
   int sock=-1;
   sock=dv_get_sock_for_destination(sock, ippkt->src, ippkt->dst);
-  printf("sock %d\n",sock);
+  //printf("sock %d\n",sock);
   sendippkt(sock, ippkt);
   return 1;
 }

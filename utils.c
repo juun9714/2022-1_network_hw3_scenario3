@@ -645,14 +645,14 @@ int sendethpkt(int sd, EthPkt *ethpkt)
   memcpy(ptr, (char *) ethpkt->dat, ethpkt_length);
 
   /* send the packet */
-  printf("IN sendethpkt, before write, buf is %s\n",buf);
+  //printf("IN sendethpkt, before write, buf is %s\n",buf);
   ret_val = write(sd, buf, len);
   if (ret_val == -1) {
     perror("write() error!\n");
     free(buf);
     exit(1);
   }
-  printf("IN sendethpkt write is done\n");
+  //printf("IN sendethpkt write is done\n");
 
   free(buf);
   return(1);
@@ -684,7 +684,7 @@ void freeethpkt(EthPkt *ethpkt)
 /* send a message to IP stack */
 int sendmessage(int sd, in_addr_t myaddr, in_addr_t dst, ushort len, u_char type, char* dat)
 {
-  printf("START of sendmessage, sd is %d\n",sd);
+  //printf("START of sendmessage, sd is %d\n",sd);
   IPPkt* ippkt; //IP packet
   struct in_addr addr;
   int ret_val;
@@ -713,7 +713,7 @@ int sendmessage(int sd, in_addr_t myaddr, in_addr_t dst, ushort len, u_char type
 
   /* write the data */
   memcpy(ippkt->dat, dat, ippkt->len);  
-  printf("IN sendmessage, right before send ippkt, sd is %d\n",sd);
+  //printf("IN sendmessage, right before send ippkt, sd is %d\n",sd);
 
   ret_val = sendippkt(sd, ippkt);
   if(ret_val != 1)
@@ -731,7 +731,7 @@ int sendmessage(int sd, in_addr_t myaddr, in_addr_t dst, ushort len, u_char type
 /* send an application message, such as DV exchange message and chatting message */
 int send_app_message(int sd, char* dst_name, ushort len, u_char type, char* dat)
 {
-  printf("IN SEND APP MESSAGE\n");
+  //printf("IN SEND APP MESSAGE\n");
   int ret_val;
   in_addr_t ipaddr[ADDR_NUM];
   int ipaddr_num = 0;
@@ -740,7 +740,7 @@ int send_app_message(int sd, char* dst_name, ushort len, u_char type, char* dat)
   /* DNS Lookup function to convert DNS name into IP addr */
   if(type == DATA_CHAT)
   {
-    printf("IN SEND APP MESSAGE@@ type is DATA_CHAT, %c\n",type);
+    //printf("IN SEND APP MESSAGE@@ type is DATA_CHAT, %c\n",type);
 
     if(dst_name == NULL)
     {
@@ -759,7 +759,7 @@ int send_app_message(int sd, char* dst_name, ushort len, u_char type, char* dat)
   }
   else if(type == DATA_DV)
   {
-    printf("IN SEND APP MESSAGE@@ type is DATA_DV, %d\n",type);
+    //printf("IN SEND APP MESSAGE@@ type is DATA_DV, %d\n",type);
     dst = IP_BCASTADDR; //the DV exchange message is broadcast to neighbor routers
   }
   else
@@ -768,24 +768,24 @@ int send_app_message(int sd, char* dst_name, ushort len, u_char type, char* dat)
     return 0;
   }
 
-  printf("IN SEND APP MESSAGE@@ out of if\n");
+  //printf("IN SEND APP MESSAGE@@ out of if\n");
 
   struct in_addr next;
   char next_addr[16];
   next.s_addr = dst;
   strcpy(next_addr, inet_ntoa(next)); 
-  printf("dst is %s\n",next_addr);
+  //printf("dst is %s\n",next_addr);
 
   /** select an appropriate port with destination address (dst) */
   /** FILL IN YOUR CODE for dv_get_socket_for_destination() */
   if(g_station_kind == STATION_ROUTER){
-    printf("IN SEND APP MESSAGE@@ another if\n");
+    //printf("IN SEND APP MESSAGE@@ another if\n");
     sd = dv_get_sock_for_destination(sd, g_myipaddrs[0], dst);
     //the selected source address of the router is the first IP address of the router, but we can enhance the source address selection.
   }
 
-  printf("IN SEND APP MESSAGE@@ right before sendmessage\n");
-  printf("what is sd %d\n",sd);
+  //printf("IN SEND APP MESSAGE@@ right before sendmessage\n");
+  //printf("what is sd %d\n",sd);
 
   ret_val = sendmessage(sd, g_myipaddrs[0], dst, len, type, dat);
   if(ret_val != 1)
@@ -843,9 +843,9 @@ char* recvmessage(int sd, in_addr_t* src, ushort* len, u_char* type)
     printf("recvmessage(): a wrongly destined IP packet with dst %s is received\n", inet_ntoa(addr));
     return NULL;  
   }
-  else if(ippkt->dst == IP_BCASTADDR){
-    printf("THIS IS BROADCAST MESSAGE FROM HUB\n");
-  }
+  //else if(ippkt->dst == IP_BCASTADDR){
+  //  printf("THIS IS BROADCAST MESSAGE FROM HUB\n");
+  //}
 
 
   *src = ippkt->src; //network byte-order
@@ -869,7 +869,7 @@ char* recvmessage(int sd, in_addr_t* src, ushort* len, u_char* type)
 /* recv an IP packet */
 IPPkt *recvippkt(int sd)
 {
-  printf("@@@@IN recvippkt@@@\n");
+  //printf("@@@@IN recvippkt@@@\n");
   EthPkt *ethpkt; //Ethernet frame
   IPPkt *ippkt; //IP packet
   char* ptr;
@@ -937,7 +937,7 @@ IPPkt *recvippkt(int sd)
 /* send an IP packet */
 int sendippkt(int sd, IPPkt *ippkt)
 {
-  printf("IN sendippkt start, sd is %d\n",sd);
+  //printf("IN sendippkt start, sd is %d\n",sd);
   char * buf;
   char * ptr;
   ushort  len;
@@ -988,13 +988,13 @@ int sendippkt(int sd, IPPkt *ippkt)
   char dst_addr[16];
   dst.s_addr = ippkt->src;
   strcpy(dst_addr, inet_ntoa(dst));
-  printf("before %s\n",dst_addr);
+  //printf("before %s\n",dst_addr);
   arp_ipaddr_to_hwaddr(ippkt->src, ethpkt->src);
   
   /* the destination MAC address should be chosen according to the data type and the location of destination host */
 
   if(ippkt->type == DATA_DV){
-    printf("after arp and in type if\n");
+    //printf("after arp and in type if\n");
     arp_ipaddr_to_hwaddr(IP_BCASTADDR, ethpkt->dst);
   }
   else if(ippkt->type == DATA_CHAT) //else if-1
@@ -1045,7 +1045,7 @@ int sendippkt(int sd, IPPkt *ippkt)
   memcpy(ethpkt->dat, buf, len); 
 
   /* send the packet to MAC layer */
-  printf("before sendehtpkt, sd is %d\n",sd);
+  //printf("before sendehtpkt, sd is %d\n",sd);
   ret_val = sendethpkt(sd, ethpkt);
   if (ret_val == -1) {
     perror("sendippkt(): write() error!\n");

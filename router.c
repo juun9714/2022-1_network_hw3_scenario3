@@ -46,7 +46,6 @@ void print_menu()
 /* process packet data */
 int processdata(int sock, char* dat, int len, int type, in_addr_t src_addr)
 {
-
   if(type == DATA_CHAT)
   {
     char name[NAME_SIZE];
@@ -64,6 +63,8 @@ int processdata(int sock, char* dat, int len, int type, in_addr_t src_addr)
   else if(type == DATA_DV)
   { /** FILL IN YOUR CODE in dv_update_routing_info() function */
     printf("##IN processdata(), and it is DATA_DV type\n");
+    printf("size of dat is %d\n",sizeof(dat));
+    //printf("dat->hop is %d\n",(dv_entry*)dat->hop);
 		dv_update_routing_info(sock, dat, len, src_addr);
    /** the memory should be freed */
     free(dat);
@@ -316,8 +317,9 @@ int main(int argc, char *argv[])
         u_char type; //data type = {DATA_DV, DATA_CHAT}
 
         set_hub_up(); //set the hub related to socket sd to HUB_UP. After calling recvmessage(), if hub_status() returns HUB_DOWN, it means that the hub related to socket sd is down. So we need to close sd.
-
+        printf("the sock number who sent this packet is %d\n",hubsock);
         dat = (char*) recvmessage(hubsock, &src_addr, &len, &type);
+        printf("IN MAIN \n%s\n",dat);
         /* NOTE: the compiler complains if there is no type casting like above */
         if (dat == NULL && (hub_status() == HUB_DOWN)) {
           char* lanname;
