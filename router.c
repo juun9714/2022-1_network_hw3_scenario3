@@ -62,6 +62,7 @@ int processdata(int sock, char* dat, int len, int type, in_addr_t src_addr)
   }
   else if(type == DATA_DV)
   { /** FILL IN YOUR CODE in dv_update_routing_info() function */
+    printf("IN ROUTER.c : sock num is %d\n",sock);
 		dv_update_routing_info(sock, dat, len, src_addr);
     free(dat);
   }

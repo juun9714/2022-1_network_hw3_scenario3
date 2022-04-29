@@ -159,16 +159,22 @@ int dv_broadcast_dv_message(in_addr_t* myipaddrs)
   strcat(net_addr,"x");
   printf("DAT :\n%s\n",net_addr);
 
-  struct in_addr src_a;
-  char src_[16];
-  src_a.s_addr = myipaddrs[0];
-  strcpy(src_, inet_ntoa(src_a));
-  printf("myipaddrs : %s\n",src_);
+  // struct in_addr src_a;
+  // char src_[16];
+  // src_a.s_addr = myipaddrs[0];
+  // strcpy(src_, inet_ntoa(src_a));
+  // printf("myipaddrs : %s\n",src_);
 
 
   for(int i=0;i<g_rt_table_size;i++){
     sock=-1;
+    struct in_addr src_a;
+    char src_[16];
+    src_a.s_addr = g_rt_table[i].next;
+    strcpy(src_, inet_ntoa(src_a));
+    printf("g_rt_table[%d].next : %s\n",i,src_);
     sock=dv_get_sock_for_destination(sock, g_rt_table[i].next, g_rt_table[i].next);
+    printf("SOCK??? :%d\n",sock);
     ret_val=sendmessage(sock, myipaddrs[0], brcaddr, len, type, net_addr);
   }
 
@@ -288,6 +294,29 @@ int dv_update_fw_table()
  
   *************************************** */
 
+  int i,j,check;
+
+  for(i=0;i<g_rt_table_size;i++){
+    check=0;
+
+    for(j=0;j<g_fw_table_size;j++){
+      if(g_rt_table[i].dest==g_fw_table[j].dest){
+        check=1;
+        break;//next rt_table entry
+      }
+    }
+
+    if(check==0){
+      g_fw_table[g_fw_table_size].dest=g_rt_table[i].dest;
+      g_fw_table[g_fw_table_size].mask=g_rt_table[i].mask;
+      g_fw_table[g_fw_table_size].next=g_rt_table[i].next;
+      g_fw_table[g_fw_table_size].itf=g_rt_table[i].itf;
+      memcpy(g_fw_table[g_fw_table_size].itf_name, g_rt_table[i].itf_name, sizeof(g_rt_table[i].itf_name));
+      // g_fw_table[g_fw_table_size].itf_name=g_rt_table[i].itf_name;
+      g_fw_table[g_fw_table_size].flag=1;
+      g_fw_table_size++;
+    }
+  }
 
   return 1;
 }
@@ -296,6 +325,7 @@ int dv_update_routing_info(int sock, char* dat, int dat_len, in_addr_t src)
 { //update routing table and forwarding table
   printf("In dv_update_routing_info\n");
   printf("IN UPDATE FUNCTION, dat is %s\n",dat);
+  printf("IN INFO FUNC : sock is %d\n",sock);
   int ret_val;
   dv_entry* dv;
   int dv_entry_num;
@@ -312,7 +342,7 @@ int dv_update_routing_info(int sock, char* dat, int dat_len, in_addr_t src)
 
   int i=0;
   dv_entry_num=0;
-  printf("dat_len : %d\n",dat_len);
+  //printf("dat_len : %d\n",dat_len);
   //if str finds 'x', string is end
 
   /*
@@ -337,7 +367,7 @@ int dv_update_routing_info(int sock, char* dat, int dat_len, in_addr_t src)
       dv_entry_num++;
     i++;
   }
-  printf("entry num = %d\n",dv_entry_num);
+  //printf("entry num = %d\n",dv_entry_num);
   dv=(dv_entry*)malloc(sizeof(dv_entry)*dv_entry_num);
   char temp[20];
   i=0;
@@ -468,6 +498,7 @@ int dv_forward(IPPkt* ippkt)
   int sock=-1;
   sock=dv_get_sock_for_destination(sock, ippkt->src, ippkt->dst);
   //printf("sock %d\n",sock);
+  printf("SOCK? %d\n",sock);
   sendippkt(sock, ippkt);
   return 1;
 }
@@ -513,8 +544,8 @@ void dv_show_forwarding_table()
       strcpy(dst_addr, inet_ntoa(dst));
       strcpy(next_addr, inet_ntoa(next)); 
 
-      printf("         NetAddr | Mask | NextHop | Interface | InterfaceName | Flag\n");
-      printf("Entry %d : %s | %d | %s | %d | %s | %d\n",i+1,dst_addr,g_fw_table[i].mask,next_addr,g_fw_table[i].itf, g_fw_table[i].itf_name);
+      printf("         NetAddr | Mask | NextHop | Interface | Flag\n");
+      printf("Entry %d : %s | %d | %s | %d | %d\n",i+1,dst_addr,g_fw_table[i].mask,next_addr,g_fw_table[i].itf, g_fw_table[i].flag);
     }
   }
   else{
